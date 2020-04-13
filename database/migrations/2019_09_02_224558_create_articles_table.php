@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreatePostsTable extends Migration
+class CreateArticlesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,9 @@ class CreatePostsTable extends Migration
      */
     public function up()
     {
-        Schema::create('posts', function (Blueprint $table) {
+        Schema::create('articles', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->integer('user_id')->default(0);
+            $table->integer('admin_id')->default(0);
             $table->string('title');
             $table->integer('category_id')->default(0);
             $table->string('abstract');
@@ -24,7 +24,6 @@ class CreatePostsTable extends Migration
             $table->tinyInteger('top')->default(0);
             $table->tinyInteger('recommend')->default(0);
             $table->tinyInteger('status')->unsigned()->default(1);
-            $table->integer('views')->default(0);
             $table->timestamps();
         });
     }

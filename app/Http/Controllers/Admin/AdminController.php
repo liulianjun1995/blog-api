@@ -14,6 +14,6 @@ class AdminController extends Controller
 
         $list = $query->select(['id', 'name'])->get();
 
-        return $this->success($list);
+        return self::success($list);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Traits;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Support\Facades\Log;
 
 trait ProxyTrait
 {
@@ -34,6 +35,7 @@ trait ProxyTrait
             }
             $respond = $client->post($url, ['form_params' => $params]);
         } catch (RequestException $exception) {
+            Log::info($exception->getMessage());
             abort(401, '请求失败，服务器错误');
         }
 

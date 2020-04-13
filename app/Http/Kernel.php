@@ -2,6 +2,7 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\LoginAuthenticate;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -21,6 +22,7 @@ class Kernel extends HttpKernel
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \Fruitcake\Cors\HandleCors::class,
+        \App\Http\Middleware\PassportCustomProviderAccessToken::class,
     ];
 
     /**
@@ -67,5 +69,6 @@ class Kernel extends HttpKernel
         'scope' => \Laravel\Passport\Http\Middleware\CheckForAnyScope::class,
         'client' => \Laravel\Passport\Http\Middleware\CheckClientCredentials::class,
         'passport-administrators' => \App\Http\Middleware\PassportCustomProvider::class,
+        'login-authenticate' => LoginAuthenticate::class
     ];
 }

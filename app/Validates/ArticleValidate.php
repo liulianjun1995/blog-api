@@ -8,8 +8,6 @@ use Illuminate\Validation\Rule;
 class ArticleValidate extends Validate
 {
     protected $message = [
-        'user_id.required'      => '请选择文章作者',
-        'user_id.exists'        => '文章作者不存在',
         'title.required'        => '请填写文章标题',
         'title.min'             => '文章标题至少4个字符',
         'title.max'             => '文章标题至多50个字符',
@@ -20,8 +18,8 @@ class ArticleValidate extends Validate
         'category_id.exists'    => '文章分类不存在',
         'cover'                 => '请上传文章封面',
         'content.required'      => '请填写文章内容',
-        'is_top.in'             => '置顶参数不合法',
-        'is_recommend.in'       => '推荐参数不合法',
+        'top.in'                => '置顶参数不合法',
+        'recommend.in'          => '推荐参数不合法',
         'status.in'             => '状态参数不合法',
     ];
 
@@ -33,10 +31,9 @@ class ArticleValidate extends Validate
     public function store($request = [])
     {
         $rules = [
-            'user_id'       => ['required', 'exists:admins,id'],
             'title'         => ['required', 'min:4', 'max:50'],
             'abstract'      => ['required', 'min:4', 'max:150'],
-            'category_id'   => ['required', 'exists:categorys,id'],
+            'category_id'   => ['required', 'exists:category,id'],
             'cover'         => ['required'],
             'content'       => ['required'],
             'is_top'        => Rule::in([0, 1]),
@@ -60,15 +57,14 @@ class ArticleValidate extends Validate
         }
 
         $rules = [
-            'user_id'       => ['required', 'exists:admins,id'],
-            'title'         => ['required', 'min:4', 'max:50'],
-            'abstract'      => ['required', 'min:4', 'max:150'],
-            'category_id'   => ['required', 'exists:categorys,id'],
-            'cover'         => ['required'],
-            'content'       => ['required'],
-            'is_top'        => Rule::in([0, 1]),
-            'is_recommend'  => Rule::in([0, 1]),
-            'status'        => Rule::in(array_keys(ArticleConstants::ARTICLE_STATUS))
+            'title'         => ['sometimes', 'required', 'min:4', 'max:50'],
+            'abstract'      => ['sometimes', 'required', 'min:4', 'max:150'],
+            'category_id'   => ['sometimes', 'required', 'exists:category,id'],
+            'cover'         => ['sometimes', 'required'],
+            'content'       => ['sometimes', 'required'],
+            'top'           => ['sometimes', Rule::in([0, 1])],
+            'recommend'     => ['sometimes', Rule::in([0, 1])],
+            'status'        => ['sometimes', Rule::in(array_keys(ArticleConstants::ARTICLE_STATUS))],
         ];
 
         return $this->validate($request, $rules, $this->message);

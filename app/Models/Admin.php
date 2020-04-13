@@ -12,7 +12,7 @@ class Admin extends Authenticatable
 
     public function posts()
     {
-        return $this->hasMany(Post::class, 'user_id', 'id');
+        return $this->hasMany(Article::class, 'user_id', 'id');
     }
 
     /**

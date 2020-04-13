@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -29,8 +30,12 @@ class User extends Authenticatable
         'password',
     ];
 
+    /**
+     * 关联评论
+     * @return HasMany
+     */
     public function comments()
     {
-        return $this->hasMany(PostComment::class);
+        return $this->hasMany(ArticleComment::class);
     }
 }

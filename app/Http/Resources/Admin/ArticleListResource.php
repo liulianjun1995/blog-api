@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Admin;
 
 use App\Enums\ArticleConstants;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ArticleItem extends JsonResource
+class ArticleListResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -19,15 +19,14 @@ class ArticleItem extends JsonResource
             'id'        => $this->id,
             'title'     => $this->title,
             'abstract'  => $this->abstract,
-            'cover'     => format_image($this->cover),
-            'category'  => $this->category->title,
-            'author'    => $this->admin->name ?? '',
-            'tags'      => $this->tags->pluck('title') ?? [],
+            'cover'     => $this->cover,
+            'category'  => $this->category->title ?? '',
+            'author'    => $this->admin->username ?? '',
             'status'    => ArticleConstants::getArticleStatusLabel($this->status),
-            'view_count'=> $this->view_count,
-            'is_top'    => $this->view_count,
-            'is_recommend'  => $this->is_recommend,
-            'created_at'    => $this->created_at->format('Y-m-d H:i:s'),
+            'views'     => $this->views,
+            'top'       => $this->top,
+            'recommend' => $this->recommend,
+            'created_at'=> $this->created_at->format('Y-m-d H:i:s'),
         ];
     }
 }

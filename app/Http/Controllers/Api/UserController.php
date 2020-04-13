@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\PostPraise;
-use App\Models\Post;
+use App\Models\ArticlePraise;
+use App\Models\Article;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +15,7 @@ class UserController extends ApiController
         return $this->success($user);
     }
 
-    public function comment(Request $request, Post $posts, $token)
+    public function comment(Request $request, Article $posts, $token)
     {
         $post_id = decode_id($token);
 
@@ -77,13 +77,13 @@ class UserController extends ApiController
         ]);
     }
 
-    public function praise(Request $request, Post $posts, $token)
+    public function praise(Request $request, Article $posts, $token)
     {
         $id = decode_id($token);
         if ($id <= 0 || !($post = $posts->query()->find($id))) {
             return $this->error('文章不存在');
         }
-        if (PostPraise::query()->where('user_id', Auth::guard('api')->id())->where('post_id', $id)->exists()) {
+        if (ArticlePraise::query()->where('user_id', Auth::guard('api')->id())->where('post_id', $id)->exists()) {
             return $this->error('你已点过赞了');
         }
         if ($post->praises()->create([

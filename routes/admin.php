@@ -8,30 +8,38 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(['namespace' => 'Admin'], function(){
 
-    Route::post('login', 'LoginController@login');
+    Route::post('auth/login', 'AuthController@login');
 
-    Route::group(['middleware' => ['passport-administrators', 'client:blog-admin']], function() {
+    Route::group(['middleware' => ['passport-administrators', 'login-authenticate', 'scope:blog-admin']], function() {
 
-        Route::get('info', 'LoginController@info');
+        Route::group(['prefix' => 'auth'], function(){
+            Route::get('info', 'AuthController@info');
+            Route::post('logout', 'AuthController@logout');
+            Route::post('avatar', 'AuthController@avatar');
+        });
 
         Route::group(['prefix' => 'admin'], function(){
             Route::get('options', 'AdminController@options');
         });
 
+        Route::group(['prefix' => 'oss'], function(){
+            Route::post('signature', 'OssController@signature');
+        });
+
         Route::group(['prefix' => 'article'], function(){
             Route::get('list', 'ArticleController@list');
-            Route::get('detail/{id}', 'ArticleController@detail');
-            Route::get('category', 'ArticleController@category');
-            Route::get('create', 'ArticleController@create');
-            Route::post('update/{id}', 'ArticleController@update');
-            Route::post('status/{id}', 'ArticleController@changeStatus');
-            Route::post('upload-image', 'ArticleController@uploadImage');
-            Route::post('delete-image', 'ArticleController@deleteImage');
+            Route::get('{id}/detail', 'ArticleController@detail');
+            Route::post('create', 'ArticleController@create');
+            Route::post('{id}/update', 'ArticleController@update');
+            Route::post('{id}/profile', 'ArticleController@profile');
+        });
 
-            Route::get('tags', 'ArticleController@tagList');
-            Route::get('tag/{id}', 'ArticleController@tagDetail');
-            Route::post('tag/create', 'ArticleController@createTag');
-            Route::post('tag/update/{id}', 'ArticleController@updateTag');
+        Route::group(['prefix' => 'category'], function(){
+
+            Route::get('options', 'CategoryController@options');
+            Route::get('list', 'CategoryController@list');
+            Route::post('order', 'CategoryController@order');
+
         });
 
     });

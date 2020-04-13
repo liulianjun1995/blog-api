@@ -6,10 +6,11 @@ use Illuminate\Support\Facades\Storage;
 if (!function_exists('encode_id')) {
 
     /**
-     * @param $id
+     * id 加密
+     * @param int $id
      * @return string
      */
-    function encode_id($id)
+    function encode_id(int $id)
     {
         $hash = new Hashids('blog', 10);
         return $hash->encode($id);
@@ -19,17 +20,18 @@ if (!function_exists('encode_id')) {
 if (!function_exists('decode_id')) {
 
     /**
-     * @param $hash_id
-     * @return string
+     * token 解密
+     * @param string $hash_id
+     * @return int
      */
-    function decode_id($hash_id)
+    function decode_id(string $hash_id)
     {
         $hash = new Hashids('blog', 10);
         $id = $hash->decode($hash_id);
-        if (!empty($id) && isset($id[0])){
-            return $id[0];
+        if (!empty($id) && isset($id[0])) {
+            return (int)$id[0];
         }
-        return '';
+        return 0;
     }
 }
 

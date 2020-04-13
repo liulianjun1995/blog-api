@@ -4,17 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\ArticleConstants;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ArticleItem;
-use App\Models\Category;
-use App\Models\Post as Article;
-use App\Models\Tag;
+use App\Http\Resources\Admin\ArticleListResource;
+use App\Models\Article;
 use App\Validates\ArticleValidate;
-use App\Validates\TagValidate;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class ArticleController extends Controller
 {
@@ -27,36 +23,34 @@ class ArticleController extends Controller
     {
         $query = Article::query();
 
-        if ($category = $request->get('category')) {
-            $query->where('category_id', $category);
-        }
+        $query->when($request->get('category_id') > 0, function (Builder $query) use ($request) {
+            $query->where('category_id', $request->get('category_id'));
+        });
+
+        $query->when($request->get('keyword'), function (Builder $query) use ($request) {
+            $like = '%' . $request->get('keyword') . '%';
+            $query->where('title', 'like', $like);
+        });
 
         $list = $query
-            ->orderBy('id', 'desc')
+            ->latest()
             ->paginate(15);
 
-        return $this->page($list, ArticleItem::class);
+        return self::page($list, ArticleListResource::class);
     }
 
     /**
      * 文章详情
-     * @param Request $request
      * @param $id
      * @return JsonResponse
      */
-    public function detail(Request $request, $id)
+    public function detail($id)
     {
         if ($id <= 0 || !($article = Article::query()->find($id))) {
-            return $this->error('文章不存在');
+            return self::fail('文章不存在');
         }
 
-        $article->load(['tags' => function ($query) {
-            $query->select(['tags.id', 'tags.title']);
-        }]);
-
-        $article->coverUrl = format_image($article->cover);
-
-        return $this->success($article);
+        return self::success($article);
     }
 
     /**
@@ -64,35 +58,21 @@ class ArticleController extends Controller
      * @param Request $request
      * @param ArticleValidate $validate
      * @return JsonResponse
-     * @throws \Exception
      */
-    public function create(Request $request, ArticleValidate $validate)
+    public function create(Request $request, ArticleValidate $validate): JsonResponse
     {
-        $params = $request->only(['title', 'abstract', 'user_id', 'category_id', 'tags', 'status', 'cover', 'content']);
+        $params = $request->only(['title', 'abstract', 'category_id', 'tags', 'status', 'cover', 'content']);
 
         $result = $validate->store($params);
 
         if ($result !== true) {
-            return $this->error($result);
+            return self::fail($result);
         }
 
-        DB::beginTransaction();
+        $params['admin_id'] = Auth::guard('admin')->id();
+        Article::query()->create($params);
 
-        try {
-            if (!($article = Article::query()->create($params))) {
-                return $this->error('创建失败');
-            }
-            $article->syncTags($params['tags']);
-        } catch (\Exception $e) {
-            Log::info($e->getMessage());
-            DB::rollBack();
-            return $this->error('创建失败');
-        }
-
-        DB::commit();
-
-        return $this->success();
-
+        return self::success();
     }
 
     /**
@@ -101,12 +81,11 @@ class ArticleController extends Controller
      * @param $id
      * @param ArticleValidate $validate
      * @return JsonResponse
-     * @throws \Exception
      */
     public function update(Request $request, $id, ArticleValidate $validate)
     {
         if ($id <= 0 || !($article = Article::query()->find($id))) {
-            return $this->error('文章不存在');
+            return self::fail('文章不存在');
         }
 
         $params = $request->only(['title', 'abstract', 'user_id', 'category_id', 'status', 'cover', 'tags', 'content']);
@@ -114,199 +93,64 @@ class ArticleController extends Controller
         $result = $validate->update($id, $params);
 
         if ($result !== true) {
-            return $this->error($result);
+            return self::fail($result);
         }
 
-        DB::beginTransaction();
-
-        try {
-            if ($article->fill($params)->save() === false) {
-                return $this->error('更新失败');
-            }
-            $article->syncTags($params['tags']);
-        } catch (\Exception $e) {
-            Log::info($e->getMessage());
-            DB::rollBack();
-            return $this->error('更新失败');
+        if ($article->fill($params)->save() === false) {
+            return self::fail('更新失败');
         }
 
-        DB::commit();
-
-        return $this->success();
+        return self::success();
     }
 
     /**
-     * 修改状态
+     * 更新属性
      * @param Request $request
      * @param $id
+     * @param ArticleValidate $validate
      * @return JsonResponse
      */
-    public function changeStatus(Request $request, $id): JsonResponse
+    public function profile(Request $request, $id, ArticleValidate $validate): JsonResponse
     {
+        $key = $request->post('key');
+        $value = $request->post('value');
+
+        if (!in_array($key, ['status', 'top', 'recommend'])) {
+            return self::fail('参数异常');
+        }
+
         if ($id <= 0 || !($article = Article::query()->find($id))) {
-            return $this->error('文章不存在');
+            return self::fail('文章不存在');
         }
 
-        $status = $request->post('status');
-
-        switch ($status) {
-            case 'published':
-                $article->status = ArticleConstants::ARTICLE_STATUS_PUBLISHED;
-                break;
-            case 'draft':
-                $article->status = ArticleConstants::ARTICLE_STATUS_DRAFT;
-                break;
-            default :
-                return $this->error('参数异常');
-        }
-
-        if ($article->save() !== false) {
-            return $this->success();
-        }
-
-        return $this->error();
-    }
-
-    /**
-     * 获取文章分类
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function category(Request $request): JsonResponse
-    {
-        $data = Category::query()
-            ->select(['id', 'order', 'title', 'router', 'show'])
-            ->get();
-
-        return $this->success($data);
-    }
-
-    /**
-     * 图片上传
-     * @param Request $request
-     * @return JsonResponse
-     * @throws \Exception
-     */
-    public function uploadImage(Request $request): JsonResponse
-    {
-        if ($file = $request->file('cover')) {
-            $path = date('Y-m-d');
-            if ($filepath = Storage::disk('public')->putFile($path, $file)) {
-                return $this->success([
-                    'url'   => Storage::disk('public')->url($filepath),
-                    'path'  => $filepath
-                ]);
-            }
-            return $this->error('上传失败');
-        }
-
-        return $this->error('参数异常');
-    }
-
-    /**
-     * 删除图片
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function deleteImage(Request $request): JsonResponse
-    {
-        if ($image = $request->post('image')) {
-            if (strpos($image, env('APP_URL')) === 0) {
-                $path = substr($image, strlen(env('APP_URL'))+1+7+1);
-                if (Storage::disk('public')->exists($path) && Storage::disk('public')->delete($path)) {
-                    return $this->success();
-                }
+        if ($key === 'status') {
+            switch ($value) {
+                case 'published':
+                    $value = ArticleConstants::ARTICLE_STATUS_PUBLISHED;
+                    break;
+                case 'draft':
+                    $value = ArticleConstants::ARTICLE_STATUS_DRAFT;
+                    break;
+                default :
+                    return self::fail('参数异常');
             }
         }
 
-        return $this->error();
-    }
-
-    /**
-     * 标签列表
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function tagList(Request $request): JsonResponse
-    {
-        $query = Tag::query();
-
-        if ($keyword = $request->get('keyword')) {
-            $like = '%' . $keyword . '%';
-            $query->where('title', 'like', $like);
-        }
-
-        $list = $query
-            ->select(['id', 'title', 'status', 'created_at'])
-            ->orderBy('id', 'desc')
-            ->get();
-
-        return $this->success($list);
-    }
-
-    /**
-     * 标签详情
-     * @param Request $request
-     * @param $id
-     * @return JsonResponse
-     */
-    public function tagDetail(Request $request, $id): JsonResponse
-    {
-        if ($id <= 0 || !($tag = Tag::query()->select(['id', 'title', 'status'])->find($id))) {
-            return $this->error('标签不存在');
-        }
-
-        return $this->success($tag);
-    }
-
-    /**
-     * 创建标签
-     * @param Request $request
-     * @param TagValidate $validate
-     * @return JsonResponse
-     */
-    public function createTag(Request $request, TagValidate $validate): JsonResponse
-    {
-        $params = $request->only(['title', 'status']);
-
-        $result = $validate->store($params);
-
-        if ($result !== true) {
-            return $this->error($result);
-        }
-
-        if (Tag::query()->create($params)) {
-            return $this->success();
-        }
-
-        return $this->error('添加失败');
-    }
-
-    /**
-     * 更新标签
-     * @param Request $request
-     * @param $id
-     * @param TagValidate $validate
-     * @return JsonResponse
-     */
-    public function updateTag(Request $request, $id, TagValidate $validate): JsonResponse
-    {
-        if ($id <= 0 || !($tag = Tag::query()->select(['id', 'title', 'status'])->find($id))) {
-            return $this->error('标签不存在');
-        }
-
-        $params = $request->only(['title', 'status']);
+        $params = [
+            $key => $value
+        ];
 
         $result = $validate->update($id, $params);
 
         if ($result !== true) {
-            return $this->error($result);
+            return self::fail($result);
         }
 
-        if ($tag->fill($params)->save($params)) {
-            return $this->success();
+        if ($article->fill($params)->save() === false) {
+            return self::fail('更新失败');
         }
 
-        return $this->error('添加失败');
+        return self::success();
     }
+
 }

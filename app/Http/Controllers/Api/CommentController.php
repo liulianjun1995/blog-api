@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\PostComment;
+use App\Models\ArticleComment;
 use Illuminate\Http\Request;
 
 class CommentController extends ApiController
 {
-    public function new(Request $request, PostComment $comment)
+    public function new(Request $request, ArticleComment $comment)
     {
         $field = ['id', 'id as token', 'post_id as post', 'user_id', 'content'];
 

@@ -19,6 +19,6 @@ class OssController extends Controller
 
         $config = $this->signatureConfig($dir);
 
-        return $this->success($config);
+        return self::success($config);
     }
 }

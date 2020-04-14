@@ -23,7 +23,7 @@ class CategoryController extends Controller
             ->orderBy('order')
             ->get();
 
-        return $this->success($list);
+        return self::success($list);
     }
 
     /**
@@ -37,7 +37,7 @@ class CategoryController extends Controller
             ->select(['id', 'title', 'order', 'show'])
             ->get();
 
-        return $this->success($list);
+        return self::success($list);
     }
 
     /**
@@ -51,7 +51,7 @@ class CategoryController extends Controller
         $list = $request->post('list', []);
 
         if (count($list) === 0) {
-            return $this->error('参数异常');
+            return self::fail('参数异常');
         }
 
         $categoryList = Category::query()
@@ -60,7 +60,7 @@ class CategoryController extends Controller
             ->get();
 
         if (count($list) !== $categoryList->count()) {
-            return $this->error('参数异常');
+            return self::fail('参数异常');
         }
 
         DB::beginTransaction();
@@ -75,11 +75,11 @@ class CategoryController extends Controller
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             DB::rollBack();
-            return $this->error('操作失败');
+            return self::fail('操作失败');
         }
 
         DB::commit();
 
-        return $this->success();
+        return self::success();
     }
 }

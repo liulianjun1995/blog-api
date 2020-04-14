@@ -33,20 +33,20 @@ class AuthController extends Controller
         $admin = Admin::query()->where('username', $username)->first();
 
         if ($admin === null) {
-            return $this->error('管理员不存在');
+            return self::fail('管理员不存在');
         }
 
         if (Hash::check($password, $admin->password) === false) {
-            return $this->error('密码错误');
+            return self::fail('密码错误');
         }
 
         if ($admin->status !== UserConstants::USER_STATUS_ENABLED) {
-            return $this->error('该账户已被禁用');
+            return self::fail('该账户已被禁用');
         }
 
         $accessToken = $this->authenticate('admins');
 
-        return $this->success($accessToken);
+        return self::success($accessToken);
     }
 
     /**
@@ -60,7 +60,7 @@ class AuthController extends Controller
 
         $user->roles = ['admin'];
 
-        return $this->success($user);
+        return self::success($user);
     }
 
     /**
@@ -71,7 +71,7 @@ class AuthController extends Controller
     {
         Auth::guard('admin')->user()->token()->delete();
 
-        return $this->success();
+        return self::success();
     }
 
     /**
@@ -87,9 +87,9 @@ class AuthController extends Controller
             $user = Auth::guard('admin')->user();
             $user->avatar = $avatar;
             $user->save();
-            return $this->success();
+            return self::success();
         }
 
-        return $this->error('图片不存在');
+        return self::fail('图片不存在');
     }
 }

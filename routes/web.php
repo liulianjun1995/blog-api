@@ -16,3 +16,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::group(['prefix' => 'oauth'], function(){
+    Route::get('{driver}/authorize', 'OAuthController@authorized')->name('oauth-authorize');
+    Route::get('qq/login', 'OAuthController@qqLogin');
+    Route::get('github/login', 'OAuthController@githubLogin');
+});

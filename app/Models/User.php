@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Passport\HasApiTokens;
 
 class User extends Authenticatable
@@ -18,7 +19,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'username', 'nickname', 'password', 'app_id', 'email', 'avatar', 'source', 'status'
+        'nickname', 'password', 'app_id', 'email', 'avatar', 'provider', 'status'
     ];
 
     /**
@@ -29,6 +30,15 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
     ];
+
+    /**
+     * password修改器
+     * @param $value
+     */
+    public function setPasswordAttribute($value): void
+    {
+        $this->attributes['password'] = Hash::make($value);
+    }
 
     /**
      * 关联评论

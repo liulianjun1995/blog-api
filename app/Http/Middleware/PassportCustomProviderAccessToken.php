@@ -28,6 +28,7 @@ class PassportCustomProviderAccessToken
      */
     public function handle($request, Closure $next)
     {
+
         try {
             $psr17Factory = new Psr17Factory();
             $psrHttpFactory = new PsrHttpFactory($psr17Factory, $psr17Factory, $psr17Factory, $psr17Factory);

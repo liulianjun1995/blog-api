@@ -23,7 +23,7 @@ class ArticleListResource extends JsonResource
             'category'  => $this->category->title ?? '',
             'author'    => $this->admin->username ?? '',
             'status'    => ArticleConstants::getArticleStatusLabel($this->status),
-            'views'     => $this->views,
+            'views'     => $this->visitors->sum('clicks'),
             'top'       => $this->top,
             'recommend' => $this->recommend,
             'created_at'=> $this->created_at->format('Y-m-d H:i:s'),

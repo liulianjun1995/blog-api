@@ -22,7 +22,7 @@ class ArticleItemResource extends JsonResource
             'abstract'          => $this->abstract,
             'cover'             => $this->cover,
             'content'           => $this->content,
-            'views'             => $this->visitors->count(),
+            'views'             => $this->visitors->sum('clicks'),
             'comments_count'    => $this->comments->count(),
             'praises'           => $this->praises->count(),
             'created_at'        => $this->created_at->format('Y-m-d'),

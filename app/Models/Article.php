@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class Article extends Model
 {
@@ -56,5 +58,33 @@ class Article extends Model
     public function visitors(): HasMany
     {
         return $this->hasMany(ArticleVisitorRegistry::class);
+    }
+
+    /**
+     * 浏览记录
+     * @return bool
+     */
+    public function visitor(): bool
+    {
+        $ip = request()->getClientIp();
+
+        if (valid_ip($ip) === false) {
+            return false;
+        }
+
+        $visitor = $this->visitors()->where('ip', $ip)->first();
+
+        if ($visitor === null) {
+            $this->visitors()->create([
+                'ip' => $ip,
+                'clicks' => 1
+            ]);
+        } else {
+            if ($visitor->updated_at->timestamp <= Carbon::now()->subHour()->timestamp) {
+                $visitor->increment('clicks');
+            }
+        }
+
+        return true;
     }
 }

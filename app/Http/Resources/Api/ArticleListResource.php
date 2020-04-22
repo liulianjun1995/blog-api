@@ -21,7 +21,7 @@ class ArticleListResource extends JsonResource
             'abstract'          => $this->abstract,
             'cover'             => $this->cover,
             'category'          => $this->category->title ?? '',
-            'views'             => $this->visitors->count(),
+            'views'             => $this->visitors->sum('clicks'),
             'comments_count'    => $this->comments->count(),
             'praises'           => $this->praises->count(),
             'recommend'         => (boolean)$this->recommend,

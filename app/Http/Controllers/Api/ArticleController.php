@@ -112,6 +112,8 @@ class ArticleController extends Controller
             return self::fail('文章不存在');
         }
 
+        $article->visitor();
+
         return self::success($article, ArticleItemResource::class);
     }
 }

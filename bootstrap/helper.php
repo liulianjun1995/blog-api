@@ -1,7 +1,6 @@
 <?php
 
 use Hashids\Hashids;
-use Illuminate\Support\Facades\Storage;
 
 if (!function_exists('encode_id')) {
 
@@ -35,3 +34,48 @@ if (!function_exists('decode_id')) {
     }
 }
 
+if (!function_exists('valid_ip')) {
+
+    /**
+     * 验证有效ip
+     * @return bool
+     */
+    function valid_ip($ip = null)
+    {
+        if (!isset($ip)) {
+            return false;
+        }
+
+        return validate($ip);
+    }
+
+    /**
+     * 验证ip
+     * @param $ip
+     * @return bool
+     */
+    function validate($ip)
+    {
+        return _is_ip4($ip) || _is_ipv6($ip);
+    }
+
+    /**
+     * @param $ip
+     *
+     * @return bool
+     */
+    function _is_ip4($ip)
+    {
+        return filter_var($ip, FILTER_VALIDATE_IP) !== false;
+    }
+
+    /**
+     * @param $ip
+     *
+     * @return bool
+     */
+    function _is_ipv6($ip)
+    {
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false;
+    }
+}
